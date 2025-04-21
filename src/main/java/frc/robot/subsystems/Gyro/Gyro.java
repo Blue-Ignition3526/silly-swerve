@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Gyro extends SubsystemBase implements GyroIO {
   GyroIO io;
-  GyroIOInputsAutoLogged inputs = new GyroIOInputsAutoLogged();
 
   /**
    * Creates a new Gyro. 
@@ -127,7 +126,6 @@ public class Gyro extends SubsystemBase implements GyroIO {
   @Override
   public void periodic() {
     io.periodic();
-    io.updateInputs(inputs);
 
     Logger.recordOutput("Gyro/Pitch", getPitch());
     Logger.recordOutput("Gyro/Yaw", getYaw());

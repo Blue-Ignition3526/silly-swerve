@@ -1,17 +1,20 @@
 package frc.robot;
 
-import com.pathplanner.lib.util.PIDConstants;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularAcceleration;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.measure.Velocity;
+import edu.wpi.first.units.measure.LinearAcceleration;
+import edu.wpi.first.units.measure.LinearVelocity;
 import lib.team3526.constants.CTRECANDevice;
 import lib.team3526.constants.PIDFConstants;
 import lib.team3526.constants.SwerveModuleOptions;
 import lib.team3526.utils.SwerveChassis;
 
 import static edu.wpi.first.units.Units.*;
+
+import com.pathplanner.lib.config.PIDConstants;
 
 public class Constants {
     //* Logging options
@@ -22,7 +25,7 @@ public class Constants {
     //* Swerve Drive
     public static final class SwerveDrive {
         //* Gyroscope (Pigeon 2.0)
-        public static final CTRECANDevice kGyroDevice = new CTRECANDevice(34, "*");
+        public static final CTRECANDevice kGyroDevice = new CTRECANDevice(34);
 
         public static final double kJoystickDeadband = 0.1;
         //* Physical model of the robot
@@ -74,31 +77,27 @@ public class Constants {
 
             //* Swerve modules options
             public static final SwerveModuleOptions kFrontLeftOptions = new SwerveModuleOptions()
-                .setAbsoluteEncoderInverted(false)
-                .setAbsoluteEncoderCANDevice(new CTRECANDevice(11, "*"))
-                .setDriveMotorID(22)
-                .setTurningMotorID(21)
+                .setDriveMotorID(2)
+                .setTurningMotorID(3)
+                .setAbsoluteEncoderCANDevice(new CTRECANDevice(4))
                 .setName("Front Left");
 
             public static final SwerveModuleOptions kFrontRightOptions = new SwerveModuleOptions()
-                .setAbsoluteEncoderInverted(false)
-                .setAbsoluteEncoderCANDevice(new CTRECANDevice(12, "*"))
-                .setDriveMotorID(24)
-                .setTurningMotorID(23)
+                .setDriveMotorID(5)
+                .setTurningMotorID(6)
+                .setAbsoluteEncoderCANDevice(new CTRECANDevice(7))
                 .setName("Front Right");
 
             public static final SwerveModuleOptions kBackLeftOptions = new SwerveModuleOptions()
-                .setAbsoluteEncoderInverted(false)
-                .setAbsoluteEncoderCANDevice(new CTRECANDevice(13, "*"))
-                .setDriveMotorID(26)
-                .setTurningMotorID(25)
+                .setDriveMotorID(8)
+                .setTurningMotorID(9)
+                .setAbsoluteEncoderCANDevice(new CTRECANDevice(10))
                 .setName("Back Left");
 
             public static final SwerveModuleOptions kBackRightOptions = new SwerveModuleOptions()
-                .setAbsoluteEncoderInverted(false)
-                .setAbsoluteEncoderCANDevice(new CTRECANDevice(14, "*"))
-                .setDriveMotorID(28)
-                .setTurningMotorID(27)
+                .setDriveMotorID(11)
+                .setTurningMotorID(12)
+                .setAbsoluteEncoderCANDevice(new CTRECANDevice(13))
                 .setName("Back Right");
         }
 

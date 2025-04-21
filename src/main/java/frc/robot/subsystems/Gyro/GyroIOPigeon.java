@@ -1,5 +1,8 @@
 package frc.robot.subsystems.Gyro;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
+
 import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,39 +16,39 @@ public class GyroIOPigeon implements GyroIO {
     }
 
     public double getPitch() {
-        return gyro.getPitch().refresh().getValue();
+        return gyro.getPitch().refresh().getValue().in(Degrees);
     }
 
     public double getYaw() {
-        return -gyro.getAngle();
+        return gyro.getYaw().refresh().getValue().in(Degrees);
     }
 
     public double getRoll() {
-        return gyro.getRoll().refresh().getValue();
+        return gyro.getRoll().refresh().getValue().in(Degrees);
     }
 
     public double getPitchVelocity() {
-        return gyro.getAngularVelocityXWorld().refresh().getValue();
+        return gyro.getAngularVelocityXWorld().refresh().getValue().in(DegreesPerSecond);
     }
 
     public double getYawVelocity() {
-        return gyro.getRate();
+        return 0;
     }
 
     public double getRollVelocity() {
-        return gyro.getAngularVelocityZWorld().refresh().getValue();
+        return gyro.getAngularVelocityZWorld().refresh().getValue().in(DegreesPerSecond);
     }
 
     public double getAccelerationX() {
-        return gyro.getAccelerationX().refresh().getValue();
+        return 0;
     }
 
     public double getAccelerationY() {
-        return gyro.getAccelerationY().refresh().getValue();
+        return 0;
     }
 
     public double getAccelerationZ() {
-        return gyro.getAccelerationZ().refresh().getValue();
+        return 0;
     }
 
     public Rotation2d getHeading() {

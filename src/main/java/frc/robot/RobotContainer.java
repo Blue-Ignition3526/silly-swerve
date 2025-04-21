@@ -14,13 +14,15 @@ import frc.robot.commands.swerve.ZeroHeading;
 import frc.robot.subsystems.SwerveDrive;
 import frc.robot.subsystems.SwerveModule;
 import frc.robot.subsystems.Gyro.Gyro;
+import frc.robot.subsystems.Gyro.GyroIO;
+import frc.robot.subsystems.Gyro.GyroIOOdometry;
 import frc.robot.subsystems.Gyro.GyroIOPigeon;
 import lib.team3526.driveControl.CustomController;
 import lib.team3526.driveControl.CustomController.CustomControllerType;
 
 public class RobotContainer {
 
-  private final CustomController m_driverControllerCustom = new CustomController(0, CustomControllerType.PS5);
+  private final CustomController m_driverControllerCustom = new CustomController(0, CustomControllerType.XBOX);
   
   private final SwerveModule frontLeft = new SwerveModule(Constants.SwerveDrive.SwerveModules.kFrontLeftOptions);
   private final SwerveModule frontRight = new SwerveModule(Constants.SwerveDrive.SwerveModules.kFrontRightOptions);
@@ -33,14 +35,16 @@ public class RobotContainer {
   SendableChooser<Command> autonomousChooser;
 
   public RobotContainer() {
-    gyro = new Gyro(new GyroIOPigeon(Constants.SwerveDrive.kGyroDevice));
+    GyroIOOdometry gyroIo = new GyroIOOdometry(Constants.SwerveDrive.PhysicalModel.kDriveKinematics);
+    gyro = new Gyro(gyroIo);
     m_swerveDrive = new SwerveDrive(frontLeft, frontRight, backLeft, backRight, gyro);
+    gyroIo.setModulePositionsSupplier(m_swerveDrive::getModulePositions);
 
     SmartDashboard.putData(new ZeroHeading(m_swerveDrive));
 
-    SendableChooser<Command> autonomousChooser = AutoBuilder.buildAutoChooser();
-    SmartDashboard.putData("Autonomous", autonomousChooser);
-    this.autonomousChooser = autonomousChooser;
+    //SendableChooser<Command> autonomousChooser = AutoBuilder.buildAutoChooser();
+    //SmartDashboard.putData("Autonomous", autonomousChooser);
+    //this.autonomousChooser = autonomousChooser;
 
     configureBindings();
   }

@@ -1,10 +1,11 @@
 package frc.robot.subsystems;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
-import com.pathplanner.lib.util.ReplanningConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -37,9 +38,6 @@ public class SwerveDrive extends SubsystemBase {
     //* Speed stats
     private boolean drivingRobotRelative = false;
     private ChassisSpeeds speeds = new ChassisSpeeds();
-
-    //* Rotational inertia accumulator
-    RotationalInertiaAccumulator rotationalInertiaAccumulator = new RotationalInertiaAccumulator(Constants.SwerveDrive.PhysicalModel.kRobotMassKg);
 
     /**
      * Create a new Swerve drivetrain with the provided Swerve Modules and gyroscope
@@ -86,24 +84,24 @@ public class SwerveDrive extends SubsystemBase {
      * @param swerveDrive
      */
     public void configureAutoBuilder(Subsystem swerveDrive) {
-        AutoBuilder.configureHolonomic(
-            this::getPose,
-            this::resetOdometry,
-            this::geRelativeChassisSpeeds,
-            this::driveRobotRelative,
-            new HolonomicPathFollowerConfig(
-                Constants.SwerveDrive.Autonomous.kTranslatePIDConstants,
-                Constants.SwerveDrive.Autonomous.kRotatePIDConstants,
-                Constants.SwerveDrive.Autonomous.kMaxSpeedMetersPerSecond.in(MetersPerSecond),
-                Constants.SwerveDrive.PhysicalModel.kWheelBase.in(Meters) / 2,
-                new ReplanningConfig(true, true)
-            ),
-            () -> {
-                if (DriverStation.getAlliance().isPresent()) return DriverStation.getAlliance().get() == Alliance.Red;
-                return false;
-            },
-            swerveDrive
-        );
+        // AutoBuilder.configure(
+        //     this::getPose,
+        //     this::resetOdometry,
+        //     this::geRelativeChassisSpeeds,
+        //     this::driveRobotRelative,
+        //     new PPHolonomicDriveController(
+        //         Constants.SwerveDrive.Autonomous.kTranslatePIDConstants,
+        //         Constants.SwerveDrive.Autonomous.kRotatePIDConstants,
+        //         Constants.SwerveDrive.Autonomous.kMaxSpeedMetersPerSecond.in(MetersPerSecond),
+        //         Constants.SwerveDrive.PhysicalModel.kWheelBase.in(Meters) / 2,
+        //         new ReplanningConfig(true, true)
+        //     ),
+        //     () -> {
+        //         if (DriverStation.getAlliance().isPresent()) return DriverStation.getAlliance().get() == Alliance.Red;
+        //         return false;
+        //     },
+        //     swerveDrive
+        // );
     }
 
     /**
@@ -311,17 +309,12 @@ public class SwerveDrive extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // Update inertia acculumator
-        rotationalInertiaAccumulator.update(this.getHeading().getRadians());
-
         // Update odometry
         this.odometry.update(getHeading(), getModulePositions());
 
         // Log data
         Logger.recordOutput("SwerveDrive/RobotHeadingRad", this.getHeading().getRadians());
         Logger.recordOutput("SwerveDrive/RobotHeadingDeg", this.getHeading().getDegrees());
-
-        Logger.recordOutput("SwerveDrive/RobotRotationalInertia", rotationalInertiaAccumulator.getTotalRotationalInertia());
         
         Logger.recordOutput("SwerveDrive/RobotPose", this.getPose());
 

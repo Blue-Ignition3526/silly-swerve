@@ -2,8 +2,17 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkBase.ControlType;
-import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.SparkMax;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -13,8 +22,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import lib.team3526.constants.PIDFConstants;
 import lib.team3526.constants.SwerveModuleOptions;
-import lib.team3526.control.LazyCANSparkMax;
-import lib.team3526.control.LazySparkPID;
 import static edu.wpi.first.units.Units.*;
 import org.littletonrobotics.junction.Logger;
 
@@ -23,15 +30,15 @@ public class SwerveModule extends SubsystemBase {
     public final SwerveModuleOptions options;
 
     //* Motors
-    private final LazyCANSparkMax driveMotor;
-    private final LazyCANSparkMax turningMotor;
+    private final SparkMax driveMotor;
+    private final SparkMax turningMotor;
 
     //* Encoders
     private final RelativeEncoder driveEncoder;
     private final RelativeEncoder turningEncoder;
 
     //* PID Controller for turning
-    private final LazySparkPID turningPID;
+    private final SparkClosedLoopController turningPID;
 
     //* Absolute encoder
     private final CANcoder absoluteEncoder;
@@ -47,30 +54,50 @@ public class SwerveModule extends SubsystemBase {
         // Store the options
         this.options = options;
 
-        // Create the motors
-        this.driveMotor = new LazyCANSparkMax(options.driveMotorID, MotorType.kBrushless);
-        this.turningMotor = new LazyCANSparkMax(options.turningMotorID, MotorType.kBrushless);
+        // * Drive motor
+        this.driveMotor = new SparkMax(options.driveMotorID, MotorType.kBrushless);
 
-        this.turningMotor.setInverted(options.turningMotorInverted);
+        SparkMaxConfig driveConfig = new SparkMaxConfig();
+        driveConfig
+            .smartCurrentLimit(40)
+            .inverted(false)
+            .idleMode(IdleMode.kBrake)
+            .voltageCompensation(12);
+        driveConfig.encoder
+            .positionConversionFactor(Constants.SwerveDrive.PhysicalModel.kDriveEncoder_RotationToMeter)
+            .velocityConversionFactor(Constants.SwerveDrive.PhysicalModel.kDriveEncoder_RPMToMeterPerSecond);
 
-        // Get and configure the encoders
-        this.driveEncoder = this.driveMotor.getEncoder();
-        this.driveEncoder.setPositionConversionFactor(Constants.SwerveDrive.PhysicalModel.kDriveEncoder_RotationToMeter); 
-        this.driveEncoder.setVelocityConversionFactor(Constants.SwerveDrive.PhysicalModel.kDriveEncoder_RPMToMeterPerSecond);
-        this.driveMotor.setInverted(options.driveMotorInverted);
+        this.driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
-        this.turningEncoder = this.turningMotor.getEncoder();
-        this.turningEncoder.setPositionConversionFactor(Constants.SwerveDrive.PhysicalModel.kTurningEncoder_RotationToRadian); 
-        this.turningEncoder.setVelocityConversionFactor(Constants.SwerveDrive.PhysicalModel.kTurningEncoder_RPMToRadianPerSecond);
+        // * Turn motor
+        this.turningMotor = new SparkMax(options.turningMotorID, MotorType.kBrushless);
 
-        this.turningPID = new LazySparkPID(this.turningMotor.getPIDController());
-        PIDFConstants.applyToSparkPIDController(this.turningPID.controller, Constants.SwerveDrive.SwerveModules.kTurningPIDConstants);
-        this.turningPID.controller.setPositionPIDWrappingMinInput(0);
-        this.turningPID.controller.setPositionPIDWrappingMaxInput(2 * Math.PI);
-        this.turningPID.controller.setPositionPIDWrappingEnabled(true);
+        SparkMaxConfig turningMotorConfig = new SparkMaxConfig();
+        turningMotorConfig
+            .smartCurrentLimit(20)
+            .inverted(false)
+            .idleMode(IdleMode.kBrake)
+            .voltageCompensation(12);
+        turningMotorConfig.encoder
+            .positionConversionFactor(Constants.SwerveDrive.PhysicalModel.kTurningEncoder_RotationToRadian)
+            .velocityConversionFactor(Constants.SwerveDrive.PhysicalModel.kTurningEncoder_RPMToRadianPerSecond);
+        turningMotorConfig.closedLoop
+            .p(Constants.SwerveDrive.SwerveModules.kTurningPIDConstants.kP)
+            .i(Constants.SwerveDrive.SwerveModules.kTurningPIDConstants.kI)
+            .d(Constants.SwerveDrive.SwerveModules.kTurningPIDConstants.kD)
+            .positionWrappingInputRange(0, 2 * Math.PI)
+            .positionWrappingEnabled(true);
+
+        this.turningMotor.configure(turningMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+
+        this.driveEncoder = driveMotor.getEncoder();
+        this.turningEncoder = turningMotor.getEncoder();
+
+        this.turningPID = turningMotor.getClosedLoopController();
 
         // Configure the absolute encoder
         this.absoluteEncoder = new CANcoder(options.absoluteEncoderDevice.getDeviceID(), options.absoluteEncoderDevice.getCanbus());
+        this.absoluteEncoder.getAbsolutePosition().waitForUpdate(20, true);
 
         // Reset the encoders
         resetEncoders();
@@ -82,7 +109,7 @@ public class SwerveModule extends SubsystemBase {
      * @return
      */
     public Angle getAbsoluteEncoderPosition() {
-        return Radians.of((absoluteEncoder.getAbsolutePosition().refresh().getValue() * 2 * Math.PI) * (this.options.absoluteEncoderInverted ? -1.0 : 1.0));
+        return Radians.of((absoluteEncoder.getAbsolutePosition().refresh().getValue().in(Rotations) * 2 * Math.PI) * (this.options.absoluteEncoderInverted ? -1.0 : 1.0));
     }
 
     /**
@@ -134,12 +161,12 @@ public class SwerveModule extends SubsystemBase {
             return;
         }
 
-        state = SwerveModuleState.optimize(state, Rotation2d.fromRadians(getAngle().in(Radians)));
+        state.optimize(Rotation2d.fromRadians(getAngle().in(Radians)));
 
         this.targetState = state;
 
         driveMotor.set(state.speedMetersPerSecond / Constants.SwerveDrive.PhysicalModel.kMaxSpeed.in(MetersPerSecond));
-        turningPID.setReference(state.angle.getRadians(), ControlType.kPosition);
+        turningPID.setReference(state.angle.getRadians(), ControlType.kPosition, ClosedLoopSlot.kSlot0);
     }
 
     /**

@@ -5,7 +5,7 @@ public class CTRECANDevice {
     String canbus;
 
     public CTRECANDevice(int deviceID) {
-        this(deviceID, "*");
+        this(deviceID, "rio");
     }
 
     public CTRECANDevice(int deviceID, String canbus) {
